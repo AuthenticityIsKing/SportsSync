@@ -52,8 +52,14 @@ function App() {
         end_date: endDate
       })
     })
-      .then(response => response.json())
-      .then(data => alert(data.message))
+      .then(response => response.blob())
+      .then(data => {
+        const url = window.URL.createObjectURL(data)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = 'calendar.ics'
+        a.click()
+      })
   }
 
   return (

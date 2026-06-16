@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from schedules.soccer import SoccerSchedule
 from schedules.basketball import BasketballSchedule
 from schedules.base import CalendarCreator
+from fastapi.responses import FileResponse
 app = FastAPI()
 
 
@@ -52,4 +53,9 @@ def create_schedule(request: ScheduleRequest):
     schedule = ScheduleClass(request.league, request.teams, begin, end)
     cal = CalendarCreator(schedule)
     cal.create_ics_file("calendar.ics")
-    return {"message": "Calendar created successfully"}
+    return FileResponse(
+        path = "calendar.ics",
+        filename = "calendar.ics",
+        media_type = "text/calendar"
+    )
+
