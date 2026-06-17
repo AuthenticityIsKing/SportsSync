@@ -4,20 +4,32 @@ import './App.css'
 const SPORTS = [
   { name: "Soccer", value: "soccer" },
   { name: "Basketball", value: "basketball" },
+  { name: "Baseball", value: "baseball"},
+  { name: "Football", value: "football"}
 ]
 
 const LEAGUES = {
   soccer: [
     { name: "Premier League", value: "eng.1" },
     { name: "La Liga", value: "esp.1" },
+    { name: "Bundesliga", value: "ger.1" },
+    { name: "Serie A", value: "ita.1" },
+    { name: "Ligue 1", value: "fra.1" },
+    { name: "MLS", value: "usa.1" },
+    { name: "Liga MX", value: "mex.1" },
+    { name: "Eredivisie", value: "ned.1" },
     { name: "Champions League", value: "uefa.champions" },
+    { name: "Europa League", value: "uefa.europa" },
+    { name: "World Cup", value: "fifa.world" },
+    { name: "Euros", value: "uefa.euro" },
+    { name: "Primeira Liga", value: "por.1"}
   ],
-  basketball: [
-    { name: "NBA", value: "nba" },
-  ]
+  basketball: [{ name: "NBA", value: "nba" }],
+  football: [{ name: "NFL", value: "nfl" }],
+  baseball: [{ name: "MLB", value: "mlb" }],
 }
 
-const STEP_LABELS = ['Sport', 'League', 'Teams', 'Dates', 'Confirm']
+
 
 function App() {
   const [step, setStep] = useState(1)
@@ -27,6 +39,8 @@ function App() {
   const [selected, setSelected] = useState([])
   const [beginDate, setBeginDate] = useState("")
   const [endDate, setEndDate] = useState("")
+
+
 
   useEffect(() => {
     if (!sport || !league) return
@@ -65,14 +79,39 @@ function App() {
       })
   }
 
+  const hasLeagueStep = sport ? LEAGUES[sport].length > 1: true
+
+  const stepLabels = hasLeagueStep
+      ? ['Sport', 'League', 'Teams', 'Dates', 'Confirm']
+      : ['Sport', 'Teams', 'Dates', 'Confirm']
+
+  function displayIndexForStep(currentStep){
+    if (hasLeagueStep) return currentStep - 1
+    if (currentStep === 1) return 0
+    return currentStep - 2
+  }
+
+  const currentDisplayIndex = displayIndexForStep(step)
+
+  function selectSport(sportValue){
+    setSport(sportValue)
+    const leagues = LEAGUES[sportValue]
+    if (leagues.length === 1) {
+      setLeague(leagues[0].value)
+      setStep(3)
+    } else{
+      setStep(2)
+    }
+  }
+
   return (
     <div className="app">
       {/* Progress indicator */}
       <div className="progress">
-        {STEP_LABELS.map((label, i) => (
+        {stepLabels.map((label, i) => (
           <div
             key={label}
-            className={`progress-step ${step === i + 1 ? 'active' : ''} ${step > i + 1 ? 'done' : ''}`}
+            className={`progress-step ${currentDisplayIndex === i ? 'active' : ''} ${step > i + 1 ? 'done' : ''}`}
           >
             {label}
           </div>
@@ -88,7 +127,7 @@ function App() {
               <button
                 key={s.value}
                 className="choice-button"
-                onClick={() => { setSport(s.value); setStep(2) }}
+                onClick={() => { selectSport(s.value) }}
               >
                 {s.name}
               </button>
