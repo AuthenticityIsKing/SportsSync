@@ -5,9 +5,12 @@ from pydantic import BaseModel
 from schedules.soccer import SoccerSchedule
 from schedules.basketball import BasketballSchedule
 from schedules.base import CalendarCreator
-from fastapi.responses import FileResponse
 from schedules.football import FootballSchedule
 from schedules.baseball import BaseballSchedule
+
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import os
 app = FastAPI()
 
 
@@ -65,4 +68,21 @@ def create_schedule(request: ScheduleRequest):
         filename = "calendar.ics",
         media_type = "text/calendar"
     )
+@app.get("/season/{sport}/{league}")
+async def get_season(sport: str, league: str):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"https://site.api.espn.com/apis/site/v2/sports/{sport}/{league}/scoreboard"
+        )
+        data = response.json()
+        season = data["leagues"][0]["season"]
+        return {
+            "label": season["displayName"],
+            "begin": season["startDate"][:10].replace("-", ""),
+            "end": season["endDate"][:10].replace("-", "")
+        }
 
+app.mount("/assets", StaticFiles(directory="frontend/dist/assets"), name="assets")
+@app.get("/{full_path:path}")
+async def serve_react_app(full_path: str):
+    return FileResponse("frontend/dist/index.html")

@@ -38,14 +38,23 @@ function App() {
   const [league, setLeague] = useState(null)
   const [teams, setTeams] = useState([])
   const [selected, setSelected] = useState([])
-  const [beginDate, setBeginDate] = useState("")
-  const [endDate, setEndDate] = useState("")
+  const [season, setSeason] = useState(null)
+  const [seasonLoading, setSeasonLoading] = useState(false)
 
-
+  useEffect(() => {
+    if (step !== 4) return
+    setSeasonLoading(true)
+    fetch(`/season/${sport}/${league}`)
+      .then(r => r.json())
+      .then(data => {
+        setSeason(data)
+        setSeasonLoading(false)
+      })
+  }, [step])
 
   useEffect(() => {
     if (!sport || !league) return
-    fetch(`http://localhost:8000/teams/${sport}/${league}`)
+    fetch(`/teams/${sport}/${league}`)
       .then(response => response.json())
       .then(data => setTeams(data.teams))
   }, [sport, league])
@@ -58,16 +67,30 @@ function App() {
     }
   }
 
+  function getLeagueName(sportValue, leagueValue){
+    const found = LEAGUES[sportValue]?.find(l => l.value === leagueValue)
+    return found ? found.name : leagueValue
+  }
+
+  function getTeamNames(abbreviations){
+    return abbreviations.map(abbr => teams.find(t => t.abbreviation === abbr)?.name || abbr).join(', ')
+  }
+
+  function getSeasonYears(label){
+    const match = label.match(/^\d{4}-\d{2}|\d{4}/)
+    return match ? match[0] : label
+  }
+
   function submitSchedule() {
-    fetch('http://localhost:8000/schedule', {
+    fetch('/schedule', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         sport,
         league,
         teams: selected,
-        begin_date: beginDate,
-        end_date: endDate
+        begin_date: season.begin,
+        end_date: season.end
       })
     })
       .then(response => response.blob())
@@ -83,8 +106,8 @@ function App() {
   const hasLeagueStep = sport ? LEAGUES[sport].length > 1: true
 
   const stepLabels = hasLeagueStep
-      ? ['Sport', 'League', 'Teams', 'Dates', 'Confirm']
-      : ['Sport', 'Teams', 'Dates', 'Confirm']
+      ? ['Sport', 'League', 'Teams', 'Confirm']
+      : ['Sport', 'Teams', 'Confirm']
 
   function displayIndexForStep(currentStep){
     if (hasLeagueStep) return currentStep - 1
@@ -186,54 +209,53 @@ function App() {
       )}
 
       {/* Step 4 - Dates */}
+
+      {/* Step 4 - Season + Confirm (combined) */}
       {step === 4 && (
         <div>
-          <h2>Pick a date range</h2>
-          <div className="date-row">
-            <div className="date-field">
-              <label>Start date</label>
-              <input type="date" value={beginDate} onChange={e => setBeginDate(e.target.value)} />
-            </div>
-            <div className="date-field">
-              <label>End date</label>
-              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
-            </div>
-          </div>
-          <button
-            className="primary-button"
-            onClick={() => setStep(5)}
-            disabled={!beginDate || !endDate}
-          >
-            Next
-          </button>
-        </div>
-      )}
+          <h2>Confirm your calendar</h2>
 
-      {/* Step 5 - Confirm */}
-      {step === 5 && (
-        <div>
-          <h2>Confirm</h2>
           <div className="summary-row">
             <span className="summary-label">Sport</span>
-            <span>{sport}</span>
+            <span>{sport.charAt(0).toUpperCase() + sport.slice(1)}</span>
           </div>
           <div className="summary-row">
             <span className="summary-label">League</span>
-            <span>{league}</span>
+            <span>{getLeagueName(sport, league)}</span>
           </div>
           <div className="summary-row">
             <span className="summary-label">Teams</span>
-            <span>{selected.join(', ')}</span>
+            <span>{getTeamNames(selected)}</span>
           </div>
-          <div className="summary-row">
-            <span className="summary-label">Dates</span>
-            <span>{beginDate} to {endDate}</span>
-          </div>
-          <button className="primary-button" onClick={submitSchedule}>
+
+          {seasonLoading ? (
+            <div className="summary-row">
+              <span className="summary-label">Season</span>
+              <span className="hint-text">Loading...</span>
+            </div>
+          ) : season ? (
+            <div className="summary-row">
+              <span className="summary-label">Season</span>
+              <span>{getSeasonYears(season.label)}</span>
+            </div>
+          ) : (
+            <div className="summary-row">
+              <span className="summary-label">Season</span>
+              <span className="hint-text">No season data available</span>
+            </div>
+          )}
+
+          <button
+            className="primary-button"
+            onClick={submitSchedule}
+            disabled={!season || seasonLoading}
+          >
             Create calendar
           </button>
         </div>
       )}
+
+
     </div>
   )
 }

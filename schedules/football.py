@@ -14,7 +14,7 @@ class FootballSchedule:
         self.match_url = "https://www.espn.com/nfl/game/_/gameId/"
 
     def get_events(self) -> list:
-        url = f"https://site.api.espn.com/apis/site/v2/sports/football/{self.league}/scoreboard?dates={self.begin_date}-{self.end_date}"
+        url = f"https://site.api.espn.com/apis/site/v2/sports/football/{self.league}/scoreboard?dates={self.begin_date}-{self.end_date}&limit=1000"
         request = urllib.request.Request(url=url)
         response = urllib.request.urlopen(request)
         raw_data = json.loads(response.read().decode("utf-8"))["events"]

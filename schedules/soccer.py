@@ -14,13 +14,11 @@ class SoccerSchedule:
         self.match_url = "https://www.espn.com/soccer/matchstats/_/gameId/"
 
     def get_events(self) -> list:
-        url = f"https://site.api.espn.com/apis/site/v2/sports/soccer/{self.league}/scoreboard?dates={self.begin_date}-{self.end_date}"
+        url = f"https://site.api.espn.com/apis/site/v2/sports/soccer/{self.league}/scoreboard?dates={self.begin_date}-{self.end_date}&limit=1000"
         request = urllib.request.Request(url=url)
         response = urllib.request.urlopen(request)
         raw_data = json.loads(response.read().decode("utf-8"))["events"]
-        print(f"Total events from ESPN: {len(raw_data)}")
-        if raw_data:
-            print(f"First event shortName: {raw_data[0]['shortName']}")
+
         # filter by club if not "all"
         if self.clubs[0] != "all":
             raw_data = [
@@ -29,7 +27,6 @@ class SoccerSchedule:
             ]
 
         # convert to common format
-        print(raw_data[0].get("name"), raw_data[0].get("shortName"), raw_data[0].get("date"))
         return [
             {
                 "name": event["name"],
